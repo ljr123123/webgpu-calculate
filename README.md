@@ -16,6 +16,6 @@
 #### (3) matrix( [vector_1, vector_2, ..., vector_n] ) -- 矩阵初始化
 #### (3) adjointMatrices(matrix) -- 伴随矩阵
 
-## PeojectDairy
+## ProjectDairy
 
 ### 1. 用途：项目日志记录
