@@ -4,7 +4,8 @@ async function main(){
   await init();
 
   
-  add([1,3, 10], [1, 5, 2]);
+  const s = await add([1,3, 10], [1, 5, 2]);
+  console.log("result", s);
 }
 main()
 </script>

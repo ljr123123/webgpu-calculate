@@ -59,10 +59,7 @@ async function add(vector_one, vector_two) {
   device.queue.submit([commandBuffer]);
   await resultBuffer.mapAsync(GPUMapMode.READ);
   const result = new Float32Array(resultBuffer.getMappedRange());
-
-  console.log("result", result);
-
-  resultBuffer.unmap();
+  return result;
 }
 
 export { init, add };
