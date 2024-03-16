@@ -40,10 +40,6 @@ async function add(vector_one, vector_two) {
       entryPoint: "computeSomething",
     },
   });
-  const resultBuffer = device.createBuffer({
-    size: vector_one.byteLength,
-    usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
-  });
   const bindGroup = device.createBindGroup({
     layout: pipeline.getBindGroupLayout(0),
     entries: [{ binding: 0, resource: { buffer: workBuffer } }],
@@ -52,8 +48,13 @@ async function add(vector_one, vector_two) {
   const pass = encoder.beginComputePass();
   pass.setPipeline(pipeline);
   pass.setBindGroup(0, bindGroup);
-  pass.dispatchWorkgroups(vector_one.length + vector_two.length);
+  pass.dispatchWorkgroups(vector_one.length, vector_one.length, vector_one.length);
   pass.end();
+  console.timeEnd();
+  const resultBuffer = device.createBuffer({
+    size: vector_one.byteLength,
+    usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+  });
   encoder.copyBufferToBuffer(workBuffer, 0, resultBuffer, 0, resultBuffer.size);
   const commandBuffer = encoder.finish();
   device.queue.submit([commandBuffer]);
