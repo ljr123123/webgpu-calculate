@@ -1,7 +1,9 @@
 let device = undefined;
 let buffer = [];
 async function init() {
-  const adapter = await navigator.gpu?.requestAdapter();
+  const adapter = await navigator.gpu?.requestAdapter({
+    powerPreference:"low-power"
+  });
   device = await adapter?.requestDevice();
   return;
 }

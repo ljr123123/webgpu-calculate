@@ -10,8 +10,9 @@ async function main(){
   await init();
 
   console.time();
+  console.log("WebGPU运行时间：");
   const s = await add(a, b);
-
+  console.log("原生运行时间：")
   console.time();
   let c = [];
   for(let i = 0; i < 10000; i++){
