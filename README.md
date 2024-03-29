@@ -9,7 +9,7 @@
     - [ ] python实现
 
 ## MathematicsPrinciples 数学原理
-1. - [ ] 支持向量机算法
+1. [ ] 支持向量机算法
 
 ## WebGPU-Calculate-torch WebGPU计算框架
 
