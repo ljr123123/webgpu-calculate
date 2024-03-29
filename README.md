@@ -1,7 +1,7 @@
 # WebGPU 大创
 
 ## ImageRecogntion 图像识别
-1. [ ] 图像去噪：
+1. - [ ] 图像去噪：
     - [ ] 原理
     - [ ] python实现
 2. [ ] 数据清洗：
