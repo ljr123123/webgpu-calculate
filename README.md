@@ -12,4 +12,3 @@
 1. [ ] 支持向量机算法
 
 ## WebGPU-Calculate-torch WebGPU计算框架
-
