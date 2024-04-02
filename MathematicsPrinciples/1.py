@@ -32,7 +32,3 @@ y_pred = svm_classifier.predict(X_test)
 # 计算准确率
 accuracy = accuracy_score(y_test, y_pred)
 print("Accuracy:", accuracy)
-
-# 随机选择一个样本进行预测
-idx = np.random.randint(0, len(X_test))
-sample = X_test[idx].reshape(8, 8)
