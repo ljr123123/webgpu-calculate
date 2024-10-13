@@ -1,18 +1,3 @@
-class ComputeQueue{
-    queue: GPUCommandBuffer[];
-    constructor() {
-        this.queue = [];
-    }
-    addCommand(commandBuffer:GPUCommandBuffer){
-        this.queue.push(commandBuffer);
-    }
-    async resolvePromise() {
-        device.queue.submit(this.queue);
-        await device.queue.onSubmittedWorkDone();
-    }
-};
-export const GPUQueue = new ComputeQueue();
-
 let device: GPUDevice;
 
 async function init(): Promise<void> {

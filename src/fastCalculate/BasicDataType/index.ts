@@ -1,5 +1,4 @@
 import { device } from "../basic";
-import { GPUQueue } from "../basic";
 
 export class Tensor {
     dtype: string | undefined;
@@ -50,7 +49,6 @@ export class Tensor {
     }
 
     async getData(): Promise<any> {
-        await GPUQueue.resolvePromise();
         const returnBuffer = device.createBuffer({
             size: this.buffer.size,
             usage: GPUBufferUsage.COPY_DST | GPUBufferUsage.MAP_READ,
@@ -60,7 +58,7 @@ export class Tensor {
         encoder.copyBufferToBuffer(this.buffer, 0, returnBuffer, 0, returnBuffer.size);
         const commandBuffer = encoder.finish();
         device.queue.submit([commandBuffer]);
-
+        await device.queue.onSubmittedWorkDone();
         await returnBuffer.mapAsync(GPUMapMode.READ);
         let result:any;
         if (this.dtype === "float32") {

@@ -1,4 +1,4 @@
-export async function loadImageToMatrix(url) {
+export async function loadImageToMatrix(url:string) {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = 'Anonymous'; // 处理跨域问题
@@ -6,6 +6,7 @@ export async function loadImageToMatrix(url) {
         img.onload = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
+            if(ctx == null) throw new Error("ctx is null");
             canvas.width = img.width;
             canvas.height = img.height;
             ctx.drawImage(img, 0, 0);
@@ -39,3 +40,4 @@ export async function loadImageToMatrix(url) {
     });
 }
 
+const input = document.createElement("input");
