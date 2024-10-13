@@ -1,4 +1,3 @@
-import { GPUQueue } from "../basic"
 import { Tensor } from "../BasicDataType/index"
 import { device } from "../basic";
 
