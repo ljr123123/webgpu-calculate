@@ -9,3 +9,7 @@ async function init(): Promise<void> {
 await init(); // 等待初始化完成
 
 export { device };
+
+export async function stop() {
+    await device.queue.onSubmittedWorkDone();
+}
