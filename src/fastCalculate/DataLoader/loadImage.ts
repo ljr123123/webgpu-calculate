@@ -39,5 +39,3 @@ export async function loadImageToMatrix(url:string) {
         img.src = url;
     });
 }
-
-const input = document.createElement("input");

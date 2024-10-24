@@ -1,51 +1,54 @@
 import { device } from "../basic";
 
 export class Tensor {
-    dtype: string | undefined;
+    dtype?: string;
     shape: number[];
-    buffer: GPUBuffer;
-    size:number;
+    buffer?: GPUBuffer;
+    size: number;
 
-    constructor(data: any[] | undefined, dtype: "int8" | "unit8" | "int16" | "uint16" | "int32" | "uint32" | "float32" | "float64" | "bigint64" | "biguint64" | undefined) {
-        if(data == undefined) {
-            this.buffer = device.createBuffer({
-                size:0,
-                usage:GPUBufferUsage.COPY_DST
-            });
-            this.shape = [];
-            this.dtype = "none";
-            this.size = 0;
+    constructor(data?: any[], shape?: number[]) {
+        // if data is undefined, set Tensor is empty.
+        if (!data) {
+            this.setTensorWithoutData();
             return;
         }
-        this.dtype = dtype;
-        this.shape = getMatrixDimensions(data);
-        const linearArr = flattenArray(data);
-        this.size = linearArr.length;
-        let typedArray: any;
-        if (this.dtype === "int8") {
-            typedArray = new Int8Array(linearArr);
-        } else if (this.dtype === "uint8") {
-            typedArray = new Uint8Array(linearArr);
-        } else if (this.dtype === "int16") {
-            typedArray = new Int16Array(linearArr);
-        } else if (this.dtype === "uint16") {
-            typedArray = new Uint16Array(linearArr);
-        } else if (this.dtype === "int32") {
-            typedArray = new Int32Array(linearArr);
-        } else if (this.dtype === "uint32") {
-            typedArray = new Uint32Array(linearArr);
-        } else if (this.dtype === "float32") {
-            typedArray = new Float32Array(linearArr);
-        } else if (this.dtype === "float64") {
-            typedArray = new Float64Array(linearArr);
+        let convertData = convertArrayTypes(data);
+        if (convertData instanceof Array) {
+            this.shape = shape ? shape : getMatrixDimensions(convertData);
+            convertData = flattenArray(data);
+            const result = checkArrayTypes(convertData);
+            if (result.includes("Integer")) {
+                convertData = new Int32Array(convertData);
+            }
+            else if (result.includes("Float")) {
+                convertData = new Float32Array(convertData);
+            }
         }
+        else {
+            this.shape = shape ? shape : [1];
+        }
+        if(convertData instanceof Float32Array) {
+            this.dtype = "f32";
+        }
+        else if(convertData instanceof Int32Array) {
+            this.dtype = "i32";
+        }
+        else if(convertData instanceof Uint32Array) {
+            this.dtype = "u32";
+        }
+        this.size = convertData.length;
         this.buffer = device.createBuffer({
-            size: typedArray.byteLength,
+            size: convertData.byteLength,
             usage: GPUBufferUsage.COPY_SRC |
-            GPUBufferUsage.STORAGE |
-            GPUBufferUsage.COPY_DST,
+                GPUBufferUsage.STORAGE |
+                GPUBufferUsage.COPY_DST,
         });
-        device.queue.writeBuffer(this.buffer, 0, typedArray);
+        device.queue.writeBuffer(this.buffer, 0, convertData);
+    }
+
+    setTensorWithoutData() {
+        this.shape = [];
+        this.size = 0;
     }
 
     async getData(): Promise<any> {
@@ -60,24 +63,15 @@ export class Tensor {
         device.queue.submit([commandBuffer]);
         await device.queue.onSubmittedWorkDone();
         await returnBuffer.mapAsync(GPUMapMode.READ);
-        let result:any;
-        if (this.dtype === "float32") {
+        let result: any;
+        if (this.dtype === "f32") {
             result = new Float32Array(returnBuffer.getMappedRange());
-        } else if (this.dtype === "int8") {
-            result = new Int8Array(returnBuffer.getMappedRange());
-        } else if (this.dtype === "uint8") {
-            result = new Uint8Array(returnBuffer.getMappedRange());
-        } else if (this.dtype === "int16") {
-            result = new Int16Array(returnBuffer.getMappedRange());
-        } else if (this.dtype === "uint16") {
-            result = new Uint16Array(returnBuffer.getMappedRange());
-        } else if (this.dtype === "int32") {
-            result = new Int32Array(returnBuffer.getMappedRange());
-        } else if (this.dtype === "uint32") {
-            result = new Uint32Array(returnBuffer.getMappedRange());
-        } else if (this.dtype === "float64") {
-            result = new Float64Array(returnBuffer.getMappedRange());
         }
+        else if(this.dtype === "i32"){
+            result = new Int32Array(returnBuffer.getMappedRange());
+        } else if (this.dtype === "u32") {
+            result = new Uint32Array(returnBuffer.getMappedRange());
+        } 
         return reshapeArray([...result], this.shape);
 
     }
@@ -126,4 +120,56 @@ function getMatrixDimensions(arr: any[]): number[] {
 
     helper(arr);
     return dimensions;
+}
+
+function convertArrayTypes(arr: any[] | TypedArray) {
+    if (arr instanceof Array) return arr;
+    else if (arr instanceof Uint8Array || arr instanceof Uint16Array || arr instanceof Uint32Array || arr instanceof Uint8ClampedArray) {
+        return convertBinaryArray(arr, "Uint32Array");
+    }
+    else if (arr instanceof Int8Array || arr instanceof Int16Array || arr instanceof Int32Array) {
+        return convertBinaryArray(arr, "Int32Array");
+    }
+    else if (arr instanceof Float32Array) {
+        return convertBinaryArray(arr, "Float32Array");
+    }
+    else if (arr instanceof Float64Array) {
+        console.warn("In WGSL, float64 must be converted to float32, which will result in some loss of precision.")
+        return convertBinaryArray(arr, "Float32Array");
+    }
+}
+
+type TypedArray = Uint8Array | Uint16Array | Uint32Array | Int8Array | Int16Array | Int32Array | Float32Array | Float64Array
+
+function convertBinaryArray(array: TypedArray, targetType: string) {
+    // 将输入数组转换为普通数组
+    const values = Array.from(array);
+
+    // 根据目标类型进行转换
+    switch (targetType) {
+        case 'Int32Array':
+            return new Int32Array(values);
+        case 'Uint8Array':
+            return new Uint8Array(values);
+        case 'Uint16Array':
+            return new Uint16Array(values);
+        case 'Uint32Array':
+            return new Uint32Array(values);
+        case 'Float32Array':
+            return new Float32Array(values);
+        case 'Float64Array':
+            return new Float64Array(values);
+    }
+}
+
+function checkArrayTypes(arr: number[]) {
+    return arr.map(value => {
+        if (Number.isInteger(value)) {
+            return 'Integer';
+        } else if (typeof value === 'number') {
+            return 'Float';
+        } else {
+            return 'Not a number';
+        }
+    });
 }
