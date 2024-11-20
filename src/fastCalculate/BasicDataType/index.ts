@@ -6,7 +6,7 @@ export class Tensor {
     buffer?: GPUBuffer;
     size: number;
 
-    constructor(data?: any[], shape?: number[]) {
+    constructor(data?: any[], shape?: number[], type?:"float32"|"int32"|"uint32") {
         // if data is undefined, set Tensor is empty.
         if (!data) {
             this.setTensorWithoutData();
@@ -17,11 +17,12 @@ export class Tensor {
             this.shape = shape ? shape : getMatrixDimensions(convertData);
             convertData = flattenArray(data);
             const result = checkArrayTypes(convertData);
-            if (result.includes("Integer")) {
-                convertData = new Int32Array(convertData);
-            }
-            else if (result.includes("Float")) {
+            
+            if (result.includes("Float")) {
                 convertData = new Float32Array(convertData);
+            }
+            else if (result.includes("Integer")) {
+                convertData = new Int32Array(convertData);
             }
         }
         else {

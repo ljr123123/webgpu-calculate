@@ -1,45 +1,14 @@
 <script setup>
-import { onMounted, ref } from 'vue';
-import { Tensor, add, zipToImages, getCount } from '../fastCalculate';
-import { getFileCountFromZip } from '../fastCalculate/FIleReader';
+import { nothing } from '../CalculateSecond/example';
+import { onMounted } from 'vue';
 import ProcessBar from '../Components/ProcessBar.vue';
-import { getMeanAndStd, getMaxAndMin, Normalize } from '../fastCalculate/transforms';
-
-
-const imageNumber = ref(0);
-const solveNumber = ref(0);
-const imagesData = ref([]);
-const imageTensor = [];
-const is_loading = ref(false);
-let interval = undefined;
 
 async function setupVectors() {
-  const tensor_1 = new Tensor([[1.2,1.4],[1.1,3.2]]);
-  const tensor_2 = new Tensor([[1.2,1.4],[1.1,3.2]]);
-  const tensor_3 = add(tensor_1, tensor_2);
-  const tensor_4 = add(tensor_1, tensor_3);
+  
+  
 }
 
-async function setImageData(event) {
-  const target = event.target;
-  if (target.files == null) return; // 检查 files 是否存在
-  const file = target.files[0];
-  if (file) {
-    try {
-      imageNumber.value = await getFileCountFromZip(file);
-      interval = setInterval(() => checkSolve(), 50);
-      const imageDataArray = await zipToImages(file, 10000);
-      imagesData.value = imageDataArray.map(imageData => {
-        let tensor = new Tensor(imageData.data, [imageData.height, imageData.width, 3]);
-        imageTensor.push(tensor);
-        return undefined;
-        // return createImageUrl(imageData);
-      });
-    } catch (error) {
-      console.error(error);
-    }
-  }
-}
+
 
 function createImageUrl(imageData) {
   const canvas = document.createElement('canvas');
@@ -68,26 +37,6 @@ function createImageUrl(imageData) {
 }
 
 
-function checkSolve() {
-  const solve = getCount();
-  console.log(solve);
-  solveNumber.value = solve;
-  if (solve === imageNumber.value) {
-    clearInterval(interval);
-  }
-}
-
-async function modelTraining() {
-  // fit_transform(imageTensor);
-  const result = await getMeanAndStd(imageTensor);
-  await Normalize(imageTensor, result[0], result[1]);
-}
-
-async function n() {
-  // fit_transform(imageTensor);
-  
-}
-
 onMounted(() => {
   setupVectors();
 });
@@ -95,11 +44,11 @@ onMounted(() => {
 <template>
   <div class="main">
     <input type="file" @change="setImageData"/>
-    <ProcessBar :progress="imageNumber ? (solveNumber / imageNumber) * 100 : 0" :is_loading="is_loading"/>
+    <!--<ProcessBar :progress="imageNumber ? (solveNumber / imageNumber) * 100 : 0" :is_loading="is_loading"/>-->
     <button @click="modelTraining()">模型训练</button>
     <button @click="n()">标准化</button>
     <div class="image-gallery">
-      <img v-for="(image, index) in imagesData" :key="index" :src="image" alt="Parsed Image" />
+      <!--<img v-for="(image, index) in imagesData" :key="index" :src="image" alt="Parsed Image" />-->
     </div>
   </div>
 </template>

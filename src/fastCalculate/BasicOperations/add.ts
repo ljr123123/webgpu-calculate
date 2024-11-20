@@ -51,6 +51,7 @@ export function add(tensor_1:Tensor, tensor_2:Tensor):Tensor {
         pass.end();
         const commandBuffer = commandEncoder.finish(); // 创建命令缓冲区
         device.queue.submit([commandBuffer]); // 提交一次
+        
         result_tensor.buffer = resultBuffer;
 
         return result_tensor;
