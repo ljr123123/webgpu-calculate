@@ -17,7 +17,7 @@ import { ref } from 'vue';
 import { readCsvAsTable } from '../Calculate/FileReader/FileReader';
 import { tensor, tensorsRead } from '../Calculate/tensor/tensor';
 import { StandScaler } from '../Calculate/preprocess/preprocess';
-import { Linear, Module } from '../Calculate';
+import { Activation, Linear, Module } from '../Calculate';
 const time = ref(0);
 
 // 用来存储读取到的文件内容
@@ -37,7 +37,9 @@ async function compute() {
     const model = new Module();
     model.setLayers([
         new Linear(tensor_array[0].shape[0], 30),
-        
+        new Activation("ReLU"),
+        new Linear(30, 5),
+        new Activation("Softmax")
     ])
     model.fit(tensor_array, tensor_array);
     model.predict(tensor_array);
