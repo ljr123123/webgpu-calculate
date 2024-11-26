@@ -12,11 +12,12 @@
 </template>
 
 <script setup lang="ts">
-import { adapter, device } from '../Calculate/basic/global';
+import { adapter } from '../Calculate/basic/global';
 import { ref } from 'vue';
 import { readCsvAsTable } from '../Calculate/FileReader/FileReader';
 import { tensor, tensorsRead } from '../Calculate/tensor/tensor';
 import { StandScaler } from '../Calculate/preprocess/preprocess';
+import { Linear, Module } from '../Calculate';
 const time = ref(0);
 
 // 用来存储读取到的文件内容
@@ -32,6 +33,15 @@ async function compute() {
     const tensor_array = fileContent.value.map(v => { return tensor.JSArray(v); });
     const scaler = new StandScaler();
     scaler.fit_transform(tensor_array);
+
+    const model = new Module();
+    model.setLayers([
+        new Linear(tensor_array[0].shape[0], 30),
+        
+    ])
+    model.fit(tensor_array, tensor_array);
+    model.predict(tensor_array);
+
     fileContent.value = await tensorsRead(tensor_array);
     const end = performance.now();
     time.value = end - start;
