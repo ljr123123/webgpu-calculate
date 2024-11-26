@@ -1,53 +1,22 @@
-import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.rcParams['font.sans-serif'] = ['Microsoft YaHei']
+# 示例数据
+x = [10, 100, 1000, 10000, 20000, 30000, 40000, 50000]  # X轴数据
+y1 = [0.01, 0.02, 0.22, 3.97, 12.3, 32, 66, 115.8]  # Y轴数据
+y2 = [2.02, 2, 2.02, 2.3, 2.8, 3.3, 3.8, 4.3]
 
-# 阶跃函数
-def step_function(x:np.ndarray):
-    y = x > 0
-    return y.astype(np.int)
-    
-# sigmoid 函数
-def sigmoid(x:np.ndarray):
-    return 1 / (1 + np.exp(-x))
+# 绘制折线图
+plt.plot(x, y1, label='Pandas', color='blue', marker='o')
+plt.plot(x, y2, label='WebGPU', color='red', marker='s')
 
-def ReLU(x:np.ndarray):
-    return np.maximum(0, x)
+# 添加标题和标签
+plt.title('数据数固定,特征量变化下WebGPU与Pandas标准化所需时间比较')
+plt.xlabel('特征量')
+plt.ylabel('标准化所需时间')
 
-def init_network():
-    network = {}
-    network['W1'] = np.array([[0.1, 0.3, 0.5], [0.2, 0.4, 0.6]])
-    network['b1'] = np.array([0.1, 0.2, 0.3])
-    network['W2'] = np.array([[0.1, 0.4], [0.2, 0.5], [0.3, 0.6]])
-    network['b2'] = np.array([0.1, 0.2])
-    network['W3'] = np.array([[0.1, 0.3], [0.2, 0.4]])
-    network['b3'] = np.array([0.1, 0.2])
+# 显示图例
+plt.legend()
 
-    return network
-
-def identify_function(x:np.ndarray):
-    return x
-
-def forward(network, x:np.ndarray):
-    W1, W2, W3 = network['W1'], network['W2'], network['W3']
-    b1, b2, b3 = network['b1'], network['b2'], network['b3']
-
-    a1 = np.dot(x, W1) + b1
-    z1 = sigmoid(a1)
-    a2 = np.dot(z1, W2) + b2
-    z2 = sigmoid(a2)
-    a3 = np.dot(z2, W3) + b3
-    y = identify_function(a3)
-
-    return y
-
-network = init_network()
-x = np.array([1.0, 0.5])
-y = forward(network, x)
-print(y)
-
-def softmax(a:np.ndarray):
-    c = np.max(a)
-    exp_a = np.exp(a - c)
-    sum_exp_a = np.sum(exp_a)
-    y = exp_a / sum_exp_a
-
-    return y
+# 显示图形
+plt.show()

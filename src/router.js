@@ -1,17 +1,10 @@
 // src/router.js
 import { createRouter, createWebHistory } from 'vue-router';
-
-
-const routes = [
-  {
-    path:"/",
-    component:() => import("./views/dataLoading.vue")
-  }
-];
+import { router_set } from "./global"
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes:router_set.routes
 });
 
 export default router;

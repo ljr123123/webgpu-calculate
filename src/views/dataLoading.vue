@@ -1,15 +1,6 @@
 <script setup>
-import { nothing } from '../CalculateSecond/example';
+import { test } from '../Calculate/example';
 import { onMounted } from 'vue';
-import ProcessBar from '../Components/ProcessBar.vue';
-
-async function setupVectors() {
-  
-  
-}
-
-
-
 function createImageUrl(imageData) {
   const canvas = document.createElement('canvas');
   canvas.width = imageData.width;
@@ -37,16 +28,13 @@ function createImageUrl(imageData) {
 }
 
 
-onMounted(() => {
-  setupVectors();
-});
+
 </script>
 <template>
   <div class="main">
-    <input type="file" @change="setImageData"/>
+    <input type="file" @change="main"/>
     <!--<ProcessBar :progress="imageNumber ? (solveNumber / imageNumber) * 100 : 0" :is_loading="is_loading"/>-->
-    <button @click="modelTraining()">模型训练</button>
-    <button @click="n()">标准化</button>
+    
     <div class="image-gallery">
       <!--<img v-for="(image, index) in imagesData" :key="index" :src="image" alt="Parsed Image" />-->
     </div>
