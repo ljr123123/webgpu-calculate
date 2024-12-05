@@ -1,11 +1,12 @@
 import { device } from "./device";
+import { LongNumberType } from "./type";
 
 interface BufferWrapperDescriptor {
     size:number; // 每最小段的内存长度，即GPUBuffer的长度
     shape:number[]; // 张量的形状
     piece:number; // 即shape中的每个元素相乘
+    type:LongNumberType;
 }
-
 
 export class BufferWrapper {
     private buffer:GPUBuffer[];
@@ -32,7 +33,22 @@ export class BufferWrapper {
             index += indexs[i] * stride;
             stride *= this.shape[i];  // 更新当前维度的跨度
         }
-    
         return this.buffer[index];  // 返回计算得到的线性索引
+    }
+    public fill(number:number):void {
+        const origin = new Float32Array(this.shape[0]).fill(number);
+        this.buffer.forEach(element => {
+            device.queue.writeBuffer(element, 0, origin);
+        });
+    }
+
+    public write(numbers:number[]):void {
+        // 展平到二维
+        numbers = numbers.flat(this.shape.length - 2);
+
+        for(let i = 0; i < numbers.length; i++) {
+            let new_origin = new Float32Array(numbers[i]);
+            device.queue.writeBuffer(this.buffer[i], 0, new_origin);
+        }
     }
 }
