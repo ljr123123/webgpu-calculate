@@ -1,12 +1,6 @@
-<script setup>
-import Navigator from './Components/Navigator.vue';
+<script setup lang="ts">
+import { test } from '../GPUCompute/example';
 </script>
-
 <template>
-    <navigator></navigator>
-    <router-view></router-view>
+<button @click="test">测试</button>
 </template>
-
-<style>
-body{margin: 0}
-</style>

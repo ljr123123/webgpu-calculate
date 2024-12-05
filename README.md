@@ -1,21 +1,5 @@
-# 项目文档基本介绍
+# Vue 3 + TypeScript + Vite
 
-## PythonProject
+This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
 
-### 1. 用途：存放python文件
-### 2. 使用：如果主写python文件的话，就把工作目录设置到PythonProject下，这样子会方便一些
-
-## src/fastCalculate
-
-### 1. 用途：存放webGPU相关函数编写
-
-### 2. 暂定目标：
-
-#### (1) add(vector, vector) -- 向量相加 -- 已实现
-#### (2) plus(vector, vector) -- 向量相乘
-#### (3) matrix( [vector_1, vector_2, ..., vector_n] ) -- 矩阵初始化
-#### (3) adjointMatrices(matrix) -- 伴随矩阵
-
-## ProjectDairy
-
-### 1. 用途：项目日志记录
+Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
