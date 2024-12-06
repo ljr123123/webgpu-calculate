@@ -1,36 +1,36 @@
-import { BufferWrapper } from "./buffer";
+import { GPUBufferGroup, GPUBufferWrapper } from "./buffer";
 import { device } from "./device";
 
-interface ComputeGroupDescriptor {
-    firstBuffer: BufferWrapper;
-    secondBuffer: BufferWrapper;
-    pipeline: GPUComputePipeline;
+interface ComputeOrder {
+    buffers: GPUBufferWrapper[];
+    bindGroupLayout: GPUBindGroupLayout;
 }
 
-interface BindGroupCompose {
-    layout: GPUBindGroupLayout;
-    entries: Iterable<GPUBindGroupEntry>
-}
-
-export class ComputeGroup {
-    private firstBuffer: BufferWrapper;
-    private secondBuffer: BufferWrapper;
-    private pipeline: GPUComputePipeline;
-    constructor({ firstBuffer, secondBuffer, pipeline }: ComputeGroupDescriptor) {
-        this.firstBuffer = firstBuffer;
-        this.secondBuffer = secondBuffer;
+class ComputeWrapper {
+    computeOrders: ComputeOrder[];
+    pipeline:GPUComputePipeline;
+    constructor(computeOrders: ComputeOrder[], pipeline: GPUComputePipeline) {
+        this.computeOrders = computeOrders;
         this.pipeline = pipeline;
     }
-    encoding(indexs: number[], bindGroupLayouts: BindGroupCompose[]): GPUCommandBuffer {
-
-        const encoder = device.createCommandEncoder();
-        const pass = encoder.beginComputePass();
-        bindGroupLayouts.forEach((compose, index) => {
-            const bindGroup = device.createBindGroup({ layout: compose.layout, entries: compose.entries })
-            pass.setBindGroup(index, bindGroup);
-        })
+    encode(): GPUCommandBuffer {
+        const bindGroups = this.computeOrders.map(element => {
+            return device.createBindGroup({
+                layout: element.bindGroupLayout,
+                entries: element.buffers.map((buffer, index) => {
+                    return {
+                        binding: index, resource: { buffer: buffer.buffer }
+                    }
+                })
+            })
+        });
+        const commandEncoder = device.createCommandEncoder();
+        const pass = commandEncoder.beginComputePass();
         pass.setPipeline(this.pipeline);
+        bindGroups.forEach((element, index) => {
+            pass.setBindGroup(index, element);
+        });
         pass.end();
-        return encoder.finish();
+        return commandEncoder.finish();
     }
 }

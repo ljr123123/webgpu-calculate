@@ -1,54 +1,91 @@
 import { device } from "./device";
-import { LongNumberType } from "./type";
+import { BinaryArray, LongNumberType } from "./type";
+import { reshape } from "../plugin/shape";
 
-interface BufferWrapperDescriptor {
-    size:number; // 每最小段的内存长度，即GPUBuffer的长度
-    shape:number[]; // 张量的形状
-    piece:number; // 即shape中的每个元素相乘
+export interface GPUBufferWrapperDescriptor {
+    data?:BinaryArray;
     type:LongNumberType;
+    length:number;
 }
 
-export class BufferWrapper {
-    private buffer:GPUBuffer[];
-    public shape:number[];
-    constructor({size, shape, piece}:BufferWrapperDescriptor) {
-        this.buffer = [];
-        this.shape = shape;
-        for(let i = 0; i < piece; i++) {
-            this.buffer.push(device.createBuffer({
-                size:size,
-                usage:GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE
-            }));
-        }
-    }
-    public bufferWrapper(indexs: number[]): GPUBuffer {
-        // 假设 indexs 表示多维数组中的坐标，shape 表示每个维度的大小
-        
-        let index = 0;
-        let stride = 1;  // 每个维度的跨度，开始时设为 1
-    
-        // 从最后一个维度开始，逐个计算每个维度的索引
-        for (let i = indexs.length - 1; i >= 0; i--) {
-            // 累加每个维度的偏移量，stride 乘以当前维度的大小
-            index += indexs[i] * stride;
-            stride *= this.shape[i];  // 更新当前维度的跨度
-        }
-        return this.buffer[index];  // 返回计算得到的线性索引
-    }
-    public fill(number:number):void {
-        const origin = new Float32Array(this.shape[0]).fill(number);
-        this.buffer.forEach(element => {
-            device.queue.writeBuffer(element, 0, origin);
+export class GPUBufferWrapper {
+    public buffer:GPUBuffer;
+    public type:LongNumberType;
+    public length:number;
+    public byteLength:number;
+    constructor({length, type, data}:GPUBufferWrapperDescriptor) {
+        this.type = type;
+        this.length = length;
+        this.buffer = device.createBuffer({
+            size:length * 4,
+            usage:GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC | GPUBufferUsage.STORAGE
         });
+        this.byteLength = this.buffer.size;
+        if(data) this.write(data);
     }
+    async read():Promise<BinaryArray> {
+        const returnBuffer = device.createBuffer({
+            size:this.byteLength,
+            usage:GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
+        });
+        const commandEncoder = device.createCommandEncoder();
+        commandEncoder.copyBufferToBuffer(this.buffer, 0, returnBuffer, 0, this.byteLength);
+        device.queue.submit([commandEncoder.finish()]);
+        await returnBuffer.mapAsync(
+            GPUMapMode.READ,
+            0,
+            this.byteLength
+        );
+        const copyArrayBuffer = returnBuffer.getMappedRange(0, this.byteLength);
+        const data = copyArrayBuffer.slice(0);
+        returnBuffer.unmap();
+        return new Float32Array(data);
+    }
+    write(data:BinaryArray):void {
+        device.queue.writeBuffer(this.buffer, 0, data);
+    }
+}
 
-    public write(numbers:number[]):void {
-        // 展平到二维
-        numbers = numbers.flat(this.shape.length - 2);
+export interface GPUBufferGroupDescriptor {
+    shape:number[];
+    type:LongNumberType;
+    data?:any[][];
+}
 
-        for(let i = 0; i < numbers.length; i++) {
-            let new_origin = new Float32Array(numbers[i]);
-            device.queue.writeBuffer(this.buffer[i], 0, new_origin);
+export class GPUBufferGroup {
+    shape:number[];
+    bufferShape:number[];
+    buffers:GPUBufferWrapper[];
+    bufferLength:number;
+    type:LongNumberType;
+    constructor({shape, type, data}:GPUBufferGroupDescriptor) {
+        this.shape = shape;
+        this.type = type;
+        this.bufferLength = shape[shape.length - 1];
+        this.bufferShape = shape.slice(0, shape.length - 1);
+        this.buffers = [];
+        const piece = this.bufferShape.reduce((product, element) => product * element, 1);
+        for(let i = 0; i < piece; i++) {
+            const buffer = new GPUBufferWrapper({
+                length:this.bufferLength,
+                type:type
+            });
+            this.buffers.push(buffer);
         }
+        if(data) this.write(data);
+    }
+    write(data:any[][]) {
+        const linear = data.flat(this.shape.length - 2);
+        for(let i = 0; i < this.buffers.length; i++) {
+            const binary = new Float32Array(linear[i]);
+            this.buffers[i].write(binary);
+        }
+    }
+    async read():Promise<any> {
+        const promiseBox = this.buffers.map(element => {
+            return element.read();
+        });
+        const result = await Promise.all(promiseBox);
+        return reshape(result, this.bufferShape);
     }
 }
