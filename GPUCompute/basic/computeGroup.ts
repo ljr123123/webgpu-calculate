@@ -24,7 +24,7 @@ interface BindGroupCompose {
     uniform:GPUBindGroup;
 }
 
-class ComputeGroup {
+export class ComputeGroup {
     WGSL: GPUShaderModule;
     pipeline: GPUComputePipeline;
     UniformLayout: GPUBindGroupLayout;
