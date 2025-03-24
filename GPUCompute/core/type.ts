@@ -96,7 +96,7 @@ export class WGSLArray {
 }
 
 export type WGSLType = BasicType | Vec | Mat | Struct | WGSLArray;
-export const type = {
+export const Type = {
     float32:BasicType.float32,
     int32:BasicType.int32,
     uint32:BasicType.uint32,
@@ -111,7 +111,11 @@ export const type = {
     },
     array:(type:BasicType | Vec | Mat | Struct, length:number) => {
         return new WGSLArray(type, length);
-    }
+    },
+    getByteLength:(type:WGSLType) => {
+        if(typeof type === "string") return basicTypeByteLength[type];
+        else return type.byteLength();
+    } 
 }
 
 export function ArrayBufferToBinaryArray(arrayBuffer:ArrayBuffer, type:BasicType) {

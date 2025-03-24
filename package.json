@@ -1,5 +1,5 @@
 {
-  "name": "webgpudeeplearning",
+  "name": "browser-learning",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,14 +9,18 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "vue": "^3.5.12"
+    "@webgpu/types": "^0.1.52",
+    "crypto-random-string": "^5.0.0",
+    "lodash": "^4.17.21",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^5.1.4",
-    "@webgpu/types": "^0.1.51",
+    "@types/lodash": "^4.17.16",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/tsconfig": "^0.7.0",
     "typescript": "~5.6.2",
-    "vite": "^5.4.10",
-    "vite-plugin-mkcert": "^1.17.6",
-    "vue-tsc": "^2.1.8"
+    "vite": "^6.0.5",
+    "vue-tsc": "^2.2.0"
   }
 }

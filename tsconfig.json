@@ -1,20 +1,16 @@
 {
-  // ...
   "compilerOptions": {
-    // ...
-    "types": [
-      "@webgpu/types"
-    ],
+    "types": ["@webgpu/types"],
     "lib": [
       "dom",
-      "es2022"
+      "esnext",
     ],
-    "target": "es2020", // 可以是 "es2017" 或更高版本
-    "module": "esnext", // 支持顶层 await 的模块选项
+    "target": "es2024",
+    "module": "esnext",
     "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
-  }
+  },
 }
