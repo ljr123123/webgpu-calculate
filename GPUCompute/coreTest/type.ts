@@ -7,6 +7,8 @@ enum Int1To4 {
     four = 4
 }
 
+
+// WGSL中的基本类型
 export enum BasicType {
     float32 = "f32",
     int32 = "i32",
@@ -19,6 +21,7 @@ export const basicTypeByteLength = {
     u32: 4
 }
 
+// WGSL 中的矩阵类型
 export class Mat {
     width: Int1To4;
     height: Int1To4;
@@ -36,6 +39,8 @@ export class Mat {
     }
 }
 
+
+// WGSL 中的vec类型
 export class Vec {
     length: Int1To4;
     type: BasicType;
@@ -51,14 +56,14 @@ export class Vec {
     }
 }
 
+
+// WGSL中的struct类型
 export class Struct {
-    typename: string;
+    typename: string; // Struct类别名称
     structSelf: { [key: string]: Struct | Mat | Vec | BasicType };
-    define: string;
-    constructor(typename: string, Struct: { [key: string]: Struct | Mat | Vec | BasicType }, define: string) {
+    constructor(typename: string, Struct: { [key: string]: Struct | Mat | Vec | BasicType }) {
         this.typename = typename;
         this.structSelf = Struct;
-        this.define = define;
     }
     byteLength() {
         let sum = 0;
@@ -79,6 +84,8 @@ export class Struct {
     }
 }
 
+
+// WGSL 中的数组类型
 export class WGSLArray {
     length: number;
     type: BasicType | Vec | Mat | Struct;
