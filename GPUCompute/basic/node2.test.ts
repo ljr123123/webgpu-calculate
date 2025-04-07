@@ -155,7 +155,7 @@ export class ReadNode extends SequenceNode {
     encode() {
 
     }
-    async compile
+
     async read() {
         if(!this.resultBuffer) throw new Error("Read Buffer not set.");
         const buffer = this.resultBuffer;

@@ -1,6 +1,6 @@
 import { device } from "./device";
 import { WGSLType } from "./type";
-import { VirtualData, virtualDataPool } from "./virtualData";
+import { VirtualData, virtualDataPool } from "./virtualData.test";
 
 export interface ResourceOnBindGroup {
     data: VirtualData;
