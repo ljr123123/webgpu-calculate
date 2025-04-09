@@ -57,6 +57,10 @@ export async function readBuffer(buffer:VirtualBuffer) {
     await buffer.read(device, resourceManager.physicalBufferManager);
 }
 
+export function freeBuffer(buffer:VirtualBuffer) {
+    buffer.free();
+}
+
 export async function writeBuffer(buffer:VirtualBuffer, data:number[]) {
     buffer.write(device, data);
 }
