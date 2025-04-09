@@ -6,7 +6,7 @@
       "esnext",
     ],
     "target": "es2024",
-    "module": "esnext",
+    "module": "ESNext",
     "moduleResolution": "node",
     "strict": true,
     "esModuleInterop": true,
