@@ -21,3 +21,8 @@ export interface BufferWithLayoutEntry {
     virtual:VirtualBuffer;
     layoutEntry:BindGroupLayoutEntry;
 }
+
+export interface Pair<T, U> {
+    first: T;
+    second: U;
+}

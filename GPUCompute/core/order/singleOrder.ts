@@ -1,90 +1,180 @@
-import { BindGroupLayoutEntry, toWGSLVariableType } from "../type";
+import { BindGroupLayoutEntry, toWGSLVariableType, WGSLType } from "../type";
 import { BufferWithLayoutEntry } from "../type/WebgpuType";
+import { WGSLArray } from "../type/WGSLType";
+import { VirtualBuffer } from "../virtualBuffer";
 import { WGSLCompile, WGSLCompileOption } from "../WGSLOption/compile";
 
-export class PipelineOrder {
-    device:GPUDevice;
-    virtualBuffers:Set<BufferWithLayoutEntry> = new Set();
-    conflictSorted:boolean = false;
-    static pipelinePool:Map<string, GPUComputePipeline> = new Map();
+export function add(a:VirtualBuffer, b:VirtualBuffer):VirtualBuffer {
+    const aSlot = {
+        label:"A",
+        availableType:[WGSLArray],
+        readonly:true
+    };
+    const bSlot = {
+        label:"B",
+        availableType:[WGSLArray],
+        readonly:true
+    };
+    const cSlot = {
+        label:"C",
+        availableType:[WGSLArray],
+        readonly:false
+    };
+    const map:Map<OriginSlotOptions, CompileSlotOptions> = new Map();
+    
 
-    bindGroup?:GPUBindGroup;
+}
 
-    WGSLCompileOption?: WGSLCompileOption;
-    computePipeline?: GPUComputePipeline;
+interface OriginSlotOptions {
+    [binding: number]: {
+        label:string
+        availableType:WGSLType[];
+        readonly:boolean;
+    };
+}
 
-    renderPipeline?: GPURenderPipeline;
-    constructor(device:GPUDevice) { 
+interface CompileSlotOptions {
+    group:number;
+    [binding:number]:{
+        label:string;
+        virtualBuffer:VirtualBuffer;
+        bindingType:GPUBufferBindingType;
+    }
+}
+
+
+export class FunctionNode {
+    computeGroupNodeMap: Map<string, ComputeGroupNode> = new Map();
+    pipelineKey: string;
+
+    device: GPUDevice;
+    WGSLMain: string;
+    slotOptions: OriginSlotOptions;
+    constructor(device: GPUDevice, pipelineKey: string, slotOptions: OriginSlotOptions, WGSLMain: string,) {
         this.device = device;
+        this.WGSLMain = WGSLMain;
+        this.pipelineKey = pipelineKey;
+        this.slotOptions = slotOptions;
     }
-    setBufferLayoutWithEntry(virtualOperation:BufferWithLayoutEntry) {
-        this.virtualBuffers.add(virtualOperation);
-    }          
-    solveConflictData() {
-        if(this.conflictSorted) return;
-        else this.conflictSorted = true;
-        const set = this.virtualBuffers;
-        for (let [selfOperation] of set.entries()) {
-            for (let [operation] of set.entries()) {
-                if (selfOperation.virtual === operation.virtual) continue;
-                if (selfOperation.layoutEntry.buffer && operation.layoutEntry.buffer) {
-                    if (selfOperation.layoutEntry.buffer.type === operation.layoutEntry.buffer.type) continue;
-                }
-                selfOperation.virtual.conflictBuffers.add(operation.virtual);
+    setCompileSlotOptions(){}
+    static getComputeGroupNodeMapKey(pipelineKey: string, bufferWithLayoutEntries: BufferWithLayoutEntry[]) {
+        let key = pipelineKey;
+        bufferWithLayoutEntries.sort((a, b) => { return a.layoutEntry.binding - b.layoutEntry.binding });
+        bufferWithLayoutEntries.forEach((resource) => {
+            if (!resource.layoutEntry.buffer) {
+                console.log("this part will fix sooner.")
+                throw new Error("only buffer allowed.");
             }
-        }
-    }
-    orderInit() {
-        const entryGroup: BindGroupLayoutEntry[] = [];
-        const bindingGroup: GPUBindGroupEntry[] = [];
-        for (let [operation] of this.virtualBuffers.entries()) {
-            entryGroup.push(operation.layoutEntry);
-            const binding = operation.virtual.getBufferBinding();
-            bindingGroup.push({
-                binding: operation.layoutEntry.binding,
-                resource: binding
-            });
-        }
-        const bindGroupLayout = this.device.createBindGroupLayout({
-            entries: entryGroup
-        });
-        const pipelineLayout = this.device.createPipelineLayout({
-            bindGroupLayouts: [bindGroupLayout]
-        });
-        const bindGroup = this.device.createBindGroup({
-            layout: bindGroupLayout,
-            entries: bindingGroup
-        });
-        return {
-            pipelineLayout,
-            bindGroup
-        }
-    }
-    setOption(option:WGSLCompileOption) {
-        this.WGSLCompileOption = option;
-    }
-    async computeInit(pipelineLayout: GPUPipelineLayout) {
-        if(!this.WGSLCompileOption) throw new Error("WGSL option not set.");
-        const WGSLString = WGSLCompile(this.WGSLCompileOption);
-        const shader = this.device.createShaderModule({
-            code: WGSLString
-        });
-        const pipeline = await this.device.createComputePipelineAsync({
-            layout: pipelineLayout,
-            compute: {
-                module: shader,
-                entryPoint: this.WGSLCompileOption.entryPoint ? this.WGSLCompileOption.entryPoint : "main"
-            }
-        });
-        return pipeline;
-    }
-    async renderInit() { }
-
-    getPipelinePoolKey(pipelineKey:string, options:WGSLCompileOption) {
-        let key = `${pipelineKey}`;
-        options.variables.forEach((variable) => {
-            key += `-${toWGSLVariableType(variable.virtual.WGSLType)}`
+            key += `${resource.layoutEntry.buffer.type}-${toWGSLVariableType(resource.virtual.WGSLType)}`
         });
         return key;
     }
+}
+export class ComputeGroupNode {
+    computeNodeMap: Map<string, ComputeNode> = new Map();
+    promiseGPUComputePipelines: Map<string, Promise<GPUComputePipeline>> = new Map();
+    GPUComputePipelines: Map<string, GPUComputePipeline> = new Map();
+    shader: GPUShaderModule;
+
+    BindGroupLayout: GPUBindGroupLayout;
+    pipelineLayout: GPUPipelineLayout;
+    device: GPUDevice;
+    constructor(device: GPUDevice, functionNode:FunctionNode, ) {
+        this.device = device;
+        this.BindGroupLayout = device.createBindGroupLayout({ entries: variables.map(va => { return va.layoutEntry }) });
+        this.pipelineLayout = device.createPipelineLayout({ bindGroupLayouts: [this.BindGroupLayout] });
+        this.shader = device.createShaderModule({ code: WGSLCompile(WGSLCompileOption, variables) });
+    }
+    createComputePipeline(entryPoint: string) {
+        const pipelinePromise = this.device.createComputePipelineAsync({
+            layout: this.pipelineLayout,
+            compute: {
+                module: this.shader,
+                entryPoint: entryPoint
+            }
+        });
+        this.promiseGPUComputePipelines.set(entryPoint, pipelinePromise);
+        pipelinePromise.then((pipeline) => {
+            this.GPUComputePipelines.set(entryPoint, pipeline);
+            this.promiseGPUComputePipelines.delete(entryPoint);
+            return pipeline;
+        });
+        return pipelinePromise;
+    }
+    getComputePipeline(entryPoint: string): Promise<GPUComputePipeline> | GPUComputePipeline {
+        const pipeline = this.GPUComputePipelines.get(entryPoint);
+        if (pipeline) return pipeline;
+
+        const pipelinePromise = this.promiseGPUComputePipelines.get(entryPoint);
+        if (pipelinePromise) return pipelinePromise;
+
+        return this.createComputePipeline(entryPoint);
+    }
+    createComputeNode(entryPoint: string, bufferWithLayoutEntries: BufferWithLayoutEntry[], dispatchWorkGroups: number[] | VirtualBuffer) {
+        return new ComputeNode(
+            this.device,
+            this.BindGroupLayout,
+            bufferWithLayoutEntries.map(b => {
+                return {
+                    binding: b.layoutEntry.binding,
+                    resource: b.virtual.getBufferBinding()
+                }
+            }),
+            entryPoint,
+            this,
+            dispatchWorkGroups
+        )
+    }
+    static getComputeNodeMapKey(pipelineKey: string, virtualBuffers: VirtualBuffer[]) {
+        let key = pipelineKey;
+        virtualBuffers.sort((a, b) => { return a.label > b.label ? 1 : -1 });
+        for (let buffer of virtualBuffers) {
+            key += `-${buffer.label}`;
+        }
+        return key;
+    }
+}
+
+export class ComputeNode {
+    group: ComputeGroupNode;
+    entryPoint: string;
+    GPUBindGroup: GPUBindGroup;
+    device: GPUDevice;
+    dispatchWorkGroups: number[] | VirtualBuffer
+    constructor(
+        device: GPUDevice,
+        bindGroupLayout: GPUBindGroupLayout,
+        entries: GPUBindGroupEntry[],
+        entryPoint: string,
+        group: ComputeGroupNode,
+        dispatchWorkGroups: number[] | VirtualBuffer
+    ) {
+        this.dispatchWorkGroups = dispatchWorkGroups;
+        this.device = device;
+        this.GPUBindGroup = device.createBindGroup({
+            layout: bindGroupLayout,
+            entries: entries
+        });
+        this.entryPoint = entryPoint;
+        this.group = group;
+    }
+    async pipelineBindGroupDispatchWorkgroupsInit(
+        dispatchWorkGroupsCaller?: (...args: any[]) => number[], ...args: any[]
+    ): Promise<{
+        pipeline: GPUComputePipeline,
+        bindGroup: GPUBindGroup,
+        dispatchWorkGroups: number[] | VirtualBuffer
+    }> {
+        const pipelinePromise = this.group.getComputePipeline(this.entryPoint);
+        let pipeline: GPUComputePipeline;
+        if (pipelinePromise instanceof Promise) pipeline = await pipelinePromise;
+        else pipeline = pipelinePromise;
+        if (dispatchWorkGroupsCaller) this.dispatchWorkGroups = dispatchWorkGroupsCaller(args);
+        return {
+            pipeline: pipeline,
+            bindGroup: this.GPUBindGroup,
+            dispatchWorkGroups: this.dispatchWorkGroups
+        }
+    }
+
 }

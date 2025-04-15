@@ -1,51 +1,55 @@
-import { PipelineOrder } from "./singleOrder";
+import { BufferWithLayoutEntry } from "../type/WebgpuType";
+import { ComputeGroupNode, ComputeNode, FunctionNode } from "./singleOrder";
 
-export class OrderManager {
+export class SubmitManager {
     device:GPUDevice;
     encoder:GPUCommandEncoder;
-    linearOrders:PipelineOrder[] = [];
-    graphOrders:PipelineOrder[][] = [];
-    constructor(device:GPUDevice) {
+
+    functionNodeMap:Map<string, FunctionNode> = new Map();
+    computeGroupNodeMap:Map<string, ComputeGroupNode> = new Map();
+    computeNodeMap:Map<string, ComputeNode> = new Map();
+
+    constructor(device:GPUDevice, commandEncoderDescriptor:GPUCommandEncoderDescriptor){
         this.device = device;
-        this.encoder = device.createCommandEncoder();
+        this.encoder = device.createCommandEncoder(commandEncoderDescriptor);
     }
-    submitEncoder() {
-        this.device.queue.submit([this.encoder.finish()]);
-        this.encoder = this.device.createCommandEncoder();
+    functionNodeRegister(pipelineKey:string, WGSLMain:string) {
+        const functionNode = new FunctionNode(this.device, WGSLMain, pipelineKey);
+        this.functionNodeMap.set(pipelineKey, functionNode);
     }
-    async linearOrdersRun(submitOnce?:boolean) {
-        const passCompile = async (order:PipelineOrder) => {
+    computeGroupRegister(
+        pipelineKey:string,
+        composes:BufferWithLayoutEntry[],
+        globalId?:{label:string, range:number[]},
+        localId?:{label:string, range:number[]}
+    ) {
+        const key = FunctionNode.getComputeGroupNodeMapKey(pipelineKey, composes);
+        const functionNode = this.functionNodeMap.get(pipelineKey);
+        if(!functionNode) throw new Error(`Please register functionNode-${pipelineKey}.`)
+        
+        const computeGroupNode = new ComputeGroupNode(this.device, composes, {
 
-            if(!order.computePipeline || !order.bindGroup) {
-                const { pipelineLayout, bindGroup } = order.orderInit();
-                order.bindGroup = bindGroup;
-                order.computePipeline = await order.computeInit(pipelineLayout);
-            }
-
-            const pass = this.encoder.beginComputePass();
-            pass.setBindGroup(0, order.bindGroup);
-            pass.setPipeline(order.computePipeline);
-            if(!order.WGSLCompileOption) throw new Error("WGSL compile not setting.");
-            pass.dispatchWorkgroups(
-                order.WGSLCompileOption.dispatchWorkGroups[0], 
-                order.WGSLCompileOption.dispatchWorkGroups[1], 
-                order.WGSLCompileOption.dispatchWorkGroups[2], 
-            );
-            pass.end();
-            if(!submitOnce) this.submitEncoder();
-        }
-        for(let order of this.linearOrders) {
-            order.solveConflictData();
-            await passCompile(order);
-        }
-        if(submitOnce) this.submitEncoder();
+        })
+        this.
     }
-    graphOrdersCompile(submitOnce?:boolean) {
-
+    singleCompile(
+        pipelineKey:string, 
+        composes:BufferWithLayoutEntry[], 
+        dispatchWorkGroupsCaller?:(...args:any[])=>number[], 
+        ...args:any[]
+    ) {
+        // 判断是不是有一模一样的数据之前已经计算过一次了;
+        const firstLevelKey = ComputeGroupNode.getComputeNodeMapKey(pipelineKey, composes.map(c=>{return c.virtual}));
+        const computeNode = this.computeNodeMap.get(firstLevelKey);
+        if(computeNode) return computeNode.pipelineBindGroupDispatchWorkgroupsInit(dispatchWorkGroupsCaller, args);
+        
+        // 判断是不是有数据类型一样的数据之前计算过一次了:计算管道可以复用
+        const secondLevelKey = FunctionNode.getComputeGroupNodeMapKey(pipelineKey, composes);
+        const computeGroup = this.computeGroupNodeMap.get(secondLevelKey);
+        
     }
-
-    solve() {
-
+    submitEncoder(commandBufferDescriptor?:GPUCommandBufferDescriptor, commandEncoderDescriptor?:GPUCommandEncoderDescriptor) {
+        this.device.queue.submit([this.encoder.finish(commandBufferDescriptor)]);
+        this.encoder = this.device.createCommandEncoder(commandEncoderDescriptor);
     }
-
 }

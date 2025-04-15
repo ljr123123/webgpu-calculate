@@ -3,6 +3,7 @@ import { VirtualBuffer, VirtualBufferDescriptor } from "./buffer";
 export class VirtualBufferManager {
     device:GPUDevice;
     virtualBuffers:VirtualBuffer[] = [];
+    bindGroupPool:Map<VirtualBuffer[], GPUBindGroup> = new Map();
     constructor(device:GPUDevice) {
         this.device = device;
     }

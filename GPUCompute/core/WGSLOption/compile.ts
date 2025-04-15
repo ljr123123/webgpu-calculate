@@ -2,8 +2,6 @@ import { toWGSLVariableType, Type } from "../type";
 import { BufferWithLayoutEntry } from "../type/WebgpuType";
 
 export interface WGSLCompileOption {
-    variables:BufferWithLayoutEntry[];
-    entryPoint:string;
     main:string;
     otherFunctions:string[];
     globalId?:{
@@ -14,16 +12,11 @@ export interface WGSLCompileOption {
         label:string;
         range:number[];
     }
-    dispatchWorkGroups:number[];
 }
 
-export function WGSLCompile(options: WGSLCompileOption) {
+export function WGSLCompile(registerVariables:{label:string, binding:number}[], options: WGSLCompileOption, variables:BufferWithLayoutEntry[]) {
     let WGSL = "";
-    // options.sources.forEach(source => {
-    //     if(source)
-    //     WGSL += ``;
-    // })
-    options.variables.forEach(source => {
+    variables.forEach(source => {
         WGSL += `@group(0) @binding(${source.layoutEntry.binding}) `;
         WGSL += `var<${source.layoutEntry.buffer!.type === "storage" ? "storage, read_write" :
             source.layoutEntry.buffer!.type === "uniform" ? "uniform" :
@@ -36,7 +29,7 @@ export function WGSLCompile(options: WGSLCompileOption) {
         },${options.globalId ? options.globalId.range[1] : 1
         },${options.globalId ? options.globalId.range[2] : 1
         })\n`
-    WGSL += `fn ${options.entryPoint ? options.entryPoint : "main"}`;
+    WGSL += `fn main`;
     WGSL += `(${options.globalId ? `@builtin(global_invocation_id) ${options.globalId.label} : vec3<u32>,` : ""
         }${options.localId ? `@builtin(local_invocation_id) ${options.localId.label} : vec3<u32>,` : ""
         }){\n`;

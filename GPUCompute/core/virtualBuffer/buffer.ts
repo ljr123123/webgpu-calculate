@@ -2,12 +2,14 @@ import { BufferBlock, LinkManager, PhysicalBufferManager } from "../physicalBuff
 import { BufferBinding, WGSLType } from "../type";
 
 export interface VirtualBufferDescriptor {
-    label: string;
+    label?: string;
     byteLength: number;
     WGSLType: WGSLType;
 }
 
 export class VirtualBuffer {
+    static bufferCount = 0;
+    static countBase = 36;
     conflictBuffers: Set<VirtualBuffer> = new Set();
     byteLength: number;
     WGSLType: WGSLType;
@@ -19,9 +21,10 @@ export class VirtualBuffer {
 
 
     constructor(descriptor: VirtualBufferDescriptor) {
-        this.label = descriptor.label;
+        this.label = descriptor.label? descriptor.label : VirtualBuffer.bufferCount.toString(VirtualBuffer.countBase);
         this.byteLength = descriptor.byteLength;
         this.WGSLType = descriptor.WGSLType;
+        VirtualBuffer.bufferCount += 1;
     }
     malloc(physicalBufferManager: PhysicalBufferManager, usage: GPUBufferUsageFlags) {
         const { block, manager } = physicalBufferManager.malloc(this, this.byteLength, usage);

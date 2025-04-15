@@ -19,4 +19,4 @@ export {
 }
 
 export type { WGSLType } from "./WGSLType"
-export type { BufferBinding, BufferBindingLayout, BindGroupLayoutEntry } from "./WebgpuType"
+export type { BufferBinding, BufferBindingLayout, BindGroupLayoutEntry, Pair } from "./WebgpuType"
